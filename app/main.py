@@ -1,3 +1,10 @@
+from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator
+
+from app.admin.views import UsersAdmin
+from app.config import settings
+from app.database import async_engine
+from app.users.models import Users
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.bookings.router import router as booking_router
@@ -39,3 +46,7 @@ app.add_middleware(
                    "Access-Control-Allow-Origin","Authorization"],
 )
 
+
+admin = Admin(app, async_engine)
+
+admin.add_view(UsersAdmin)
