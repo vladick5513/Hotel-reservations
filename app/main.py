@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
-from app.admin.views import UsersAdmin
+from app.admin.auth import authentication_backend
+from app.admin.views import UsersAdmin, BookingsAdmin, RoomsAdmin, HotelsAdmin
 from app.config import settings
 from app.database import async_engine
 from app.users.models import Users
@@ -47,6 +48,9 @@ app.add_middleware(
 )
 
 
-admin = Admin(app, async_engine)
+admin = Admin(app, async_engine, authentication_backend=authentication_backend)
 
 admin.add_view(UsersAdmin)
+admin.add_view(BookingsAdmin)
+admin.add_view(RoomsAdmin)
+admin.add_view(HotelsAdmin)
