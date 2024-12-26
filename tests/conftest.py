@@ -1,9 +1,15 @@
+import json
+from datetime import datetime
+
 import pytest
 
 import os
+
+from sqlalchemy import insert
+
 os.environ["MODE"] = "TEST"
 
-from app.database import async_engine, Base
+from app.database import async_engine, Base, async_session_factory
 from app.hotels.models import Hotels
 from app.hotels.rooms.models import Rooms
 from app.main import app
@@ -21,10 +27,30 @@ async def prepare_database():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    yield
+    def open_mock_json(model: str):
+        with open(f"tests/mock_{model}.json", encoding="utf-8") as file:
+            return json.load(file)
 
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    hotels = open_mock_json("hotels")
+    rooms = open_mock_json("rooms")
+    users = open_mock_json("users")
+    bookings = open_mock_json("bookings")
+
+    for booking in bookings:
+        booking["date_from"] = datetime.strptime(booking["date_from"], "%Y-%m-%d")
+        booking["date_to"] = datetime.strptime(booking["date_to"], "%Y-%m-%d")
+
+    async with async_session_factory() as session:
+        for Model, values in [
+            (Hotels, hotels),
+            (Rooms, rooms),
+            (Users, users),
+            (Bookings, bookings),
+        ]:
+            query = insert(Model).values(values)
+            await session.execute(query)
+
+        await session.commit()
 
 @pytest.fixture(scope="function")
 async def ac():
