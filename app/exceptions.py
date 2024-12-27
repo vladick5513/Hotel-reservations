@@ -37,5 +37,5 @@ class UserIsNotPresentException(BookingException):
     status_code = status.HTTP_401_UNAUTHORIZED
 
 class RoomCannotBeBooked(BookingException):
-    status_code = status.HTTP_409_CONFLICT,
+    status_code = status.HTTP_409_CONFLICT
     detail = "Не осталось свободных мест"
