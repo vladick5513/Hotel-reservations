@@ -1,12 +1,6 @@
 import json
-from datetime import datetime
-
 import pytest
-
 import os
-
-from sqlalchemy import insert
-
 os.environ["MODE"] = "TEST"
 
 from app.database import async_engine, Base, async_session_factory
@@ -15,6 +9,8 @@ from app.hotels.rooms.models import Rooms
 from app.main import app
 from app.users.models import Users
 from app.bookings.models import Bookings
+from sqlalchemy import insert
+from datetime import datetime
 from httpx import AsyncClient
 from app.config import settings
 
@@ -55,4 +51,14 @@ async def prepare_database():
 @pytest.fixture(scope="function")
 async def ac():
     async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+@pytest.fixture(scope="session")
+async def authenticated_ac():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        await ac.post("/auth/login", json = {
+            "email": "test@test.com",
+            "password": "test"
+        })
+        assert ac.cookies["booking_access_token"]
         yield ac
