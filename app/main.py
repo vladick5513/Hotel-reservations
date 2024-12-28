@@ -1,12 +1,13 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+import time
 
 from app.admin.auth import authentication_backend
 from app.admin.views import UsersAdmin, BookingsAdmin, RoomsAdmin, HotelsAdmin
 from app.config import settings
 from app.database import async_engine
 from app.users.models import Users
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from app.bookings.router import router as booking_router
 from app.users.router import router as users_router
@@ -18,6 +19,7 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqladmin import Admin, ModelView
 from redis import asyncio as aioredis
+from app.logger import logger
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -54,3 +56,13 @@ admin.add_view(UsersAdmin)
 admin.add_view(BookingsAdmin)
 admin.add_view(RoomsAdmin)
 admin.add_view(HotelsAdmin)
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time = time.perf_counter() - start_time
+    logger.info("Request handling time", extra={
+        "process_time": round(process_time, 4)
+    })
+    return response
