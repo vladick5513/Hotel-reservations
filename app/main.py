@@ -6,8 +6,8 @@ from app.admin.auth import authentication_backend
 from app.admin.views import UsersAdmin, BookingsAdmin, RoomsAdmin, HotelsAdmin
 from app.config import settings
 from app.database import async_engine
-from app.users.models import Users
 from fastapi import FastAPI, Request
+from fastapi_versioning import VersionedFastAPI, version
 from fastapi.staticfiles import StaticFiles
 from app.bookings.router import router as booking_router
 from app.users.router import router as users_router
@@ -27,8 +27,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     FastAPICache.init(RedisBackend(redis), prefix="cache")
     yield
 
+
+
 app = FastAPI(lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="app/static"), "static")
+
 
 app.include_router(users_router)
 app.include_router(booking_router)
@@ -49,13 +51,19 @@ app.add_middleware(
                    "Access-Control-Allow-Origin","Authorization"],
 )
 
+app = VersionedFastAPI(app,
+    version_format='{major}',
+    prefix_format='/v{major}',
+)
+
 
 admin = Admin(app, async_engine, authentication_backend=authentication_backend)
-
 admin.add_view(UsersAdmin)
 admin.add_view(BookingsAdmin)
 admin.add_view(RoomsAdmin)
 admin.add_view(HotelsAdmin)
+
+app.mount("/static", StaticFiles(directory="app/static"), "static")
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
