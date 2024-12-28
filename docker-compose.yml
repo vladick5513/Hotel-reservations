@@ -13,5 +13,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:6
+    container_name: booking_redis
+    ports:
+      - "${REDIS_PORT}:6379"
+
 volumes:
   postgres_data:
